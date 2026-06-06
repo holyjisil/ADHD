@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>My Tracker</title>
+</head>
+<body>
+    <h1>오늘의 기록</h1>
+    
+    <p>
+        <label>
+            날짜: <input type="date" id="dateInput">
+        </label>
+    </p>
+    
+    <p>
+        <label>
+            기분 (1-10): 
+            <input type="range" min="1" max="10" step="1" value="5" id="moodSlider">
+            <span id="moodValue">5</span>
+        </label>
+        <details style="margin-top: 5px;">
+            <summary style="cursor: pointer; color: #555;">기분 척도 기준 보기</summary>
+            <div style="background: #f5f5f5; padding: 10px; margin-top: 5px; border-radius: 5px; font-size: 14px;">
+                <strong>나의 기분 척도:</strong><br>
+                <strong>1</strong> = 침대에서 못 일어남, 자살 사고 있음<br>
+                <strong>3</strong> = 출근은 하지만 일 안 됨, 우울 깊음<br>
+                <strong>5</strong> = 보통, 평소 일상 가능<br>
+                <strong>7</strong> = 평소보다 좋음, 의욕 있음<br>
+                <strong>9</strong> = 들뜸 주의, 잠 줄어듦<br>
+            </div>
+        </details>
+    </p>
+    
+    <p>
+        <label>
+            수면 시간: <input type="number" min="0" max="24" step="0.5" id="sleepInput"> 시간
+        </label>
+    </p>
+    
+    <p>
+        <label>
+            기상 시각: <input type="time" id="wakeTimeInput">
+        </label>
+    </p>
+    
+    <p>
+        <label>
+            에너지: 
+            <select id="energySelect">
+                <option value="1">낮음</option>
+                <option value="2" selected>보통</option>
+                <option value="3">높음</option>
+            </select>
+        </label>
+    </p>
+    
+    <fieldset>
+        <legend>약 복용</legend>
+        <p>
+            <label>
+                <input type="checkbox" id="morningMedsCheck"> 오전 정규약
+            </label>
+            <details style="margin-top: 5px;">
+                <summary style="cursor: pointer; color: #555;">처방약</summary>
+                <div style="background: #f5f5f5; padding: 10px; margin-top: 5px; border-radius: 5px; font-size: 14px;">
+                    콘서타OROS서방정 54mg<br>
+                    데파코트서방정 500mg<br>
+                </div>
+            </details>
+        </p>
+        <p>
+            <label>
+                <input type="checkbox" id="eveningMedsCheck"> 저녁 정규약
+            </label>
+            <details style="margin-top: 5px;">
+                <summary style="cursor: pointer; color: #555;">처방약</summary>
+                <div style="background: #f5f5f5; padding: 10px; margin-top: 5px; border-radius: 5px; font-size: 14px;">
+                    데파코트서방정 500mg<br>
+                    명인탄산리튬정<br>
+                    쿠에타핀정 12.5mg<br>
+                    아고틴정 25mg<br>
+                </div>
+            </details>
+        </p>
+        <p>
+            <label>
+                <input type="checkbox" id="prnCheck"> PRN 약 (아티반) 복용
+            </label>
+        </p>
+    </fieldset>
+    
+    <p>
+        <label>
+            저녁 답답함: 
+            <select id="anxietySelect">
+                <option value="0">없음</option>
+                <option value="1">약간</option>
+                <option value="2">보통</option>
+                <option value="3">심함</option>
+            </select>
+        </label>
+    </p>
+    
+    <p>
+        <label>
+            메모:<br>
+            <textarea rows="3" cols="40" placeholder="메모..." id="notesInput"></textarea>
+        </label>
+    </p>
+    
+    <p>
+        <button type="button" id="saveButton">저장</button>
+    </p>
+
+    <hr>
+
+    <h2>저장된 기록</h2>
+    <div id="entriesList">
+        아직 기록이 없습니다.
+    </div>
+    
+    <script>
+        // 슬라이더 → 옆 숫자 표시
+        const slider = document.getElementById("moodSlider");
+        const display = document.getElementById("moodValue");
+        slider.addEventListener("input", function() {
+            display.textContent = slider.value;
+        });
+        
+        // 저장 함수
+        function saveEntry() {
+            const entry = {
+                date: document.getElementById("dateInput").value,
+                mood: document.getElementById("moodSlider").value,
+                sleep: document.getElementById("sleepInput").value,
+                wakeTime: document.getElementById("wakeTimeInput").value,
+                energy: document.getElementById("energySelect").value,
+                morningMeds: document.getElementById("morningMedsCheck").checked,
+                eveningMeds: document.getElementById("eveningMedsCheck").checked,
+                prn: document.getElementById("prnCheck").checked,
+                anxiety: document.getElementById("anxietySelect").value,
+                notes: document.getElementById("notesInput").value
+            };
+            
+            // 날짜 필수 검증
+            if (!entry.date) {
+                alert("날짜를 입력해주세요");
+                return;
+            }
+            
+            console.log("저장할 데이터:", entry);
+            
+            const entries = JSON.parse(localStorage.getItem("entries") || "[]");
+            
+            // 같은 날짜 찾기
+            const existingIndex = entries.findIndex(function(e) {
+                return e.date === entry.date;
+            });
+            
+            let message;
+            if (existingIndex !== -1) {
+                // 같은 날짜 있음 → 사용자 확인
+                const confirmed = confirm(
+                    entry.date + " 데이터가 이미 있습니다.\n덮어쓰시겠습니까?"
+                );
+                if (!confirmed) {
+                    return;  // 취소
+                }
+                entries[existingIndex] = entry;
+                message = entry.date + " 데이터를 수정했습니다.";
+            } else {
+                // 새 날짜 → 추가
+                entries.push(entry);
+                message = "저장 완료! 현재 " + entries.length + "개의 기록이 있습니다.";
+            }
+            
+            localStorage.setItem("entries", JSON.stringify(entries));
+            alert(message);
+            
+            displayEntries();
+        }
+        
+        // 저장 버튼에 연결
+        const saveButton = document.getElementById("saveButton");
+        saveButton.addEventListener("click", saveEntry);
+
+        // 저장된 기록을 화면에 표시하는 함수
+        function displayEntries() {
+            const entries = JSON.parse(localStorage.getItem("entries") || "[]");
+            const listDiv = document.getElementById("entriesList");
+            
+            if (entries.length === 0) {
+                listDiv.textContent = "아직 기록이 없습니다.";
+                return;
+            }
+            
+            let html = "";
+            for (let i = entries.length - 1; i >= 0; i--) {
+                const entry = entries[i];
+                html += "<div style='border: 1px solid #ccc; padding: 10px; margin: 5px 0;'>";
+                html += "<strong>" + entry.date + "</strong> ";
+                html += "기분: " + entry.mood + " | ";
+                html += "수면: " + entry.sleep + "h | ";
+                html += "에너지: " + entry.energy;
+                
+                // 새 약 정보 (이전 데이터 호환)
+                if (entry.morningMeds !== undefined) {
+                    html += " | 오전약: " + (entry.morningMeds ? "○" : "✗");
+                }
+                if (entry.eveningMeds !== undefined) {
+                    html += " | 저녁약: " + (entry.eveningMeds ? "○" : "✗");
+                }
+                if (entry.prn !== undefined) {
+                    html += " | PRN: " + (entry.prn ? "○" : "✗");
+                }
+                
+                if (entry.notes) {
+                    html += "<br>메모: " + entry.notes;
+                }
+                html += "</div>";
+            }
+            
+            listDiv.innerHTML = html;
+        }
+        
+        // 페이지 로드 시 자동으로 실행
+        displayEntries();
+    </script>
+</body>
+</html>
